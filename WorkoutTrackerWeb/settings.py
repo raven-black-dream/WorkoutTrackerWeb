@@ -14,6 +14,7 @@ import django_heroku
 from pathlib import Path
 from .config import Application
 import dj_database_url
+import psycopg2
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -81,12 +82,12 @@ WSGI_APPLICATION = 'WorkoutTrackerWeb.wsgi.application'
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'workoutappweb',
-        'USER': 'name',
-        'PASSWORD': '',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'WorkoutAppWeb',
+        'USER': 'postgres',
+        'PASSWORD': 'R@itze1104',
         'HOST': 'localhost',
-        'PORT': ''
+        'PORT': '5432'
     }
 }
 db_from_env = dj_database_url.config(conn_max_age=500)
