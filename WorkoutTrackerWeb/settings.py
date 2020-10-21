@@ -79,8 +79,16 @@ WSGI_APPLICATION = 'WorkoutTrackerWeb.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-#db_from_env = dj_database_url.config(conn_max_age=500)
-#DATABASES['default'].update(db_from_env)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'workoutappweb',
+        'USER': 'eharley',
+        'PASSWORD': 'R@itze1104',
+        'HOST': '127.0.0.1',
+        'PORT': '3306'
+    }
+}
 
 
 # Password validation
