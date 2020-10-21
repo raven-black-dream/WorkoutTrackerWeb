@@ -1,0 +1,1 @@
+web: gunicorn TUTRPage.wsgi --log-file
