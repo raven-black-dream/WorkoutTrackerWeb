@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
+import django_heroku
 from pathlib import Path
 from .config import Application
 import dj_database_url
@@ -128,3 +129,6 @@ LOGOUT_REDIRECT_URL = '/'
 # Security Related Settings
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+
+django_heroku.settings(locals())
+
