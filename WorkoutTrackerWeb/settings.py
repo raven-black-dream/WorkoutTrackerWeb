@@ -58,7 +58,7 @@ ROOT_URLCONF = 'WorkoutTrackerWeb.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'WorkoutAppWebGUI/templates']
+        'DIRS': [BASE_DIR / 'WorkoutAppWebGUI/../WorkoutAppWebGUI/templates']
         ,
         'APP_DIRS': True,
         'OPTIONS': {
@@ -125,7 +125,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
-
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
