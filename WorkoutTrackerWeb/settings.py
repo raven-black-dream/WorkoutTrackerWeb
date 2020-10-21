@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import os
 from pathlib import Path
 from .config import Application
+import dj_database_url
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -77,16 +78,10 @@ WSGI_APPLICATION = 'WorkoutTrackerWeb.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-
+db_from_env = dj_database_url.config(conn_max_age=500)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': Application.DATABASE,
-        'USER': Application.USERNAME,
-        "PASSWORD": Application.PASSWORD,
-        'HOST': Application.IP_ADDRESS,
-        'PORT': Application.PORT
-    }
+
+    'default': {}.update(db_from_env)
 }
 
 
