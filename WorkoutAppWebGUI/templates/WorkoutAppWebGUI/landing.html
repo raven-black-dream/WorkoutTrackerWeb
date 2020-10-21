@@ -1,0 +1,26 @@
+{% extends 'WorkoutAppWebGUI/base.html' %}
+{% block content %}
+    <h3>Workout History</h3>
+    <div class="border">
+        <table class="table table-striped table-hover">
+        <thead class="thead-dark">
+           <tr>
+               <th scope="col">Workout ID</th>
+               <th scope="col">Date</th>
+               <th scope="col">Program Day</th>
+           </tr>
+           </thead>
+            {% for workout in exercise_history %}
+                <tr>
+                    <td><a href="{% url 'view_workout' pk=workout.workout_id %}">{{ workout.workout_id }}</a></td>
+                    <td>{{ workout.date.date }}</td>
+                    <td>{{ workout.expected.day_name }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div>
+        {{div|safe}}
+    </div>
+
+{% endblock %}

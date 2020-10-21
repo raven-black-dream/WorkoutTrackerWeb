@@ -1,0 +1,15 @@
+{% extends 'WorkoutAppWebGUI/base.html' %}
+{% block content %}
+    {% if UserDetails %}
+        <div class="container">
+            <p>First Name: {{ user_data.first_name }}</p>
+            <p>Last Name: {{ user_data.last_name }}</p>
+            <p>Current Program: {{ program.program_name }}</p>
+            <p>Current Weight: {{ user_weight }}</p>
+        </div>
+        <div>
+        <button><a href="{% url 'user_edit' %}">Edit</a></button>
+        </div>
+    {% endif %}
+
+{% endblock %}
