@@ -10,7 +10,7 @@ from bokeh.embed import components
 from bokeh.models import Select, CustomJS, ColumnDataSource
 from bokeh.layouts import column
 import pandas
-import math
+import numpy
 
 
 def index(request):
@@ -73,7 +73,7 @@ def plot(input_data):
 
 def calculate_one_rep_max(row):
     numerator = 100 * row['avg_weight']
-    denominator = 48.8 + (53.8 * math.exp(-0.075 * row['avg_reps']))
+    denominator = 48.8 + (53.8 * numpy.exp(-0.075 * row['avg_reps']))
     return float(numerator) / float(denominator)
 
 
