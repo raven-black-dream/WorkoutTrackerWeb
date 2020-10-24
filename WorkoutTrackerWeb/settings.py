@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import os
 import django_heroku
 from pathlib import Path
-from .config import Application
 import dj_database_url
 import psycopg2
 
@@ -43,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'WorkoutAppWebGUI'
+    'WorkoutAppWebGUI',
+    'crispy_forms'
 ]
 
 MIDDLEWARE = [
@@ -134,8 +134,9 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 # Security Related Settings
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
 
 django_heroku.settings(locals())
 
+CRISPY_TEMPLATE_PACK = 'bootstrap4'

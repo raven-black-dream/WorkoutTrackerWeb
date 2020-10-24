@@ -1,5 +1,6 @@
 from django import forms
-from .models import Program, WAUser, UserWeight, UserProgram
+from django.forms.models import inlineformset_factory
+from .models import WAUser, UserWeight, UserProgram, Workout, Set
 
 
 class UserForm(forms.ModelForm):
@@ -47,7 +48,11 @@ class DayForm(forms.Form):
     )
 
 
-class ProgramSetForm(forms.Form):
-    """Form for Exercise Sets within Program Days"""
+class DaySelectorForm(forms.Form):
+    """This form  is for the Record a workout function. Selects the day of the program to display"""
+    day_selector = forms.ChoiceField()
 
 
+SetFormSet = inlineformset_factory(
+    Workout, Set, fields=('set_number', 'exercise', 'reps', 'weight', 'rpe',)
+)

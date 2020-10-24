@@ -36,7 +36,7 @@
             <a class="nav-link dropdown-toggle" href="#" id="dropdown01" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Program</a>
             <div class="dropdown-menu" aria-labelledby="dropdown01">
               <a class="dropdown-item" href="{% url 'view_program' pk=user.wauser.pk %}">View Program</a>
-              <a class="dropdown-item" href="#">Record a Workout</a>
+              <a class="dropdown-item" href="{% url 'choose_day' %}">Record a Workout</a>
             </div>
           </li>
           <li class="nav-item">

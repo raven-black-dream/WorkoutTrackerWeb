@@ -11,6 +11,8 @@ urlpatterns = [
     path('user/edit', views.edit_user, name="user_edit"),
     path('user/<int:pk>/program', views.ProgramView.as_view(), name="view_program"),
     path('workout/<int:pk>', views.WorkoutView.as_view(), name="view_workout"),
+    path('record_workout/', views.choose_day, name='choose_day'),
+    path('record_workout/<int:day_id>', views.AddWorkoutView.as_view(), name='add_workout'),
     path('contact', views.contact, name="contact")
 
 ]

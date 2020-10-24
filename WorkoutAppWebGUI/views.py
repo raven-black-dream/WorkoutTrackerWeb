@@ -1,10 +1,12 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.views import generic, View
-from django.db.models import Avg
+from django.shortcuts import render, get_object_or_404, redirect, reverse
+from django.views import generic
+from django.db.models import Avg, Max
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-from .models import Workout, WAUser, Program, UserWeight, UserProgram, Set, ProgramDay
-from .forms import UserForm, UserWeightForm, UserProgramForm
+from django.utils.timezone import datetime
+from .models import Workout, WAUser, Program, UserWeight, UserProgram, Set, ProgramDay, ExpectedSet, UnitType
+from .forms import UserWeightForm, UserProgramForm, DaySelectorForm, SetFormSet
+from .ml import Predictor
 from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.models import Select, CustomJS, ColumnDataSource
@@ -90,6 +92,30 @@ def edit_user(request):
     return render(request, "WorkoutAppWebGUI/profile_edit.html", {'forms': forms})
 
 
+def choose_day(request):
+    user = get_object_or_404(WAUser, pk=request.user.wauser.pk)
+    form = DaySelectorForm
+    user_program = UserProgram.objects.filter(user_id=user.pk).filter(current=1).first()
+    days = user_program.program.programday_set.all()
+    choices = [((day.program.program_id, day.day_name), day.day_name) for day in days]
+    choices.insert(0, ((None, "Different Workout"), "Different Workout"))
+    form.declared_fields['day_selector'].choices = choices
+    context = {}
+    if request.GET:
+        temp = request.GET['day_selector']
+        temp = temp[1:-1].split(', ')
+        program_id = int(temp[0])
+        day_name = temp[1][1:-1]
+        if day_name != "Different Workout":
+            day = ProgramDay.objects.filter(program_id=program_id).filter(day_name=day_name).first()
+            return redirect('add_workout', day_id=day.program_day_id)
+        else:
+            context = {}
+            return render(request, '', context)
+    return render(request, "WorkoutAppWebGUI/day_selector.html", {'form': form,
+                                                                  'program': user_program.program.program_name})
+
+
 class UserView(LoginRequiredMixin, generic.DetailView):
     model = WAUser
     template_name = 'WorkoutAppWebGUI/profile.html'
@@ -145,3 +171,55 @@ class WorkoutView(LoginRequiredMixin, generic.DetailView):
         context = super(WorkoutView, self).get_context_data(**kwargs)
         context['data'] = Workout.objects.get(workout_id=self.kwargs['pk']).set_set.all()
         return context
+
+
+class AddWorkoutView(LoginRequiredMixin, generic.CreateView):
+    model = Workout
+    fields = ['date']
+    template_name = 'WorkoutAppWebGUI/add_workout.html'
+
+    def get_form(self, form_class=None):
+        form = super(AddWorkoutView, self).get_form(form_class)
+        form.fields['date'].input_formats = ['%d/%m/%Y']
+        form.fields['date'].initial = datetime.strftime(datetime.today(), '%d/%m/%Y')
+        return form
+
+    def get_context_data(self, **kwargs):
+        data = super(AddWorkoutView, self).get_context_data(**kwargs)
+        data['day'] = ProgramDay.objects.filter(program_day_id=self.kwargs['day_id']).first()
+        day = ExpectedSet.objects.filter(day_id=self.kwargs['day_id']).all()
+        pred = Predictor(day, self.request.user.wauser.pk)
+        suggestion = pred.predict()
+        if self.request.POST:
+            data['sets'] = SetFormSet(self.request.POST)
+        else:
+
+            data['sets'] = SetFormSet(initial=suggestion)
+            data['sets'].extra = len(suggestion)
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        sets = context['sets']
+        form = context['form']
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.pk = Workout.objects.all().aggregate(Max('workout_id'))['workout_id__max'] + 1
+            instance.complete = 1
+            instance.user_id = self.request.user.wauser.pk
+            instance.expected = context['day']
+            instance.save()
+
+        if sets.is_valid():
+            sets.instance = instance
+            sets_instance = sets.save(commit=False)
+            max_id = Set.objects.all().aggregate(Max('set_id'))['set_id__max'] + 1
+            for ex_set in sets_instance:
+                ex_set.pk = max_id
+                ex_set.unit = UnitType.objects.filter(label='lbs').first()
+                ex_set.save()
+                max_id += 1
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('landing')
