@@ -188,12 +188,11 @@ class AddWorkoutView(LoginRequiredMixin, generic.CreateView):
         data = super(AddWorkoutView, self).get_context_data(**kwargs)
         data['day'] = ProgramDay.objects.filter(program_day_id=self.kwargs['day_id']).first()
         day = ExpectedSet.objects.filter(day_id=self.kwargs['day_id']).all()
-        pred = Predictor(day, self.request.user.wauser.pk)
-        suggestion = pred.predict()
         if self.request.POST:
             data['sets'] = SetFormSet(self.request.POST)
         else:
-
+            pred = Predictor(day, self.request.user.wauser.pk)
+            suggestion = pred.predict()
             data['sets'] = SetFormSet(initial=suggestion)
             data['sets'].extra = len(suggestion)
         return data

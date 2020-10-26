@@ -88,33 +88,14 @@ class WAUser(models.Model):
         return f'{self.first_name} {self.last_name}'
 
 
-class UserModel(models.Model):
-    user_model_id = models.IntegerField(primary_key=True)
-    user_id = models.ForeignKey(WAUser, models.DO_NOTHING)
-    model = models.CharField(max_length=45)
-
-    class Meta:
-        db_table = 'user_model'
-
-
 class UserProgram(models.Model):
-    user_program_id = models.IntegerField(primary_key=True)
+    user_program_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(WAUser, models.DO_NOTHING)
     program = models.ForeignKey(Program, models.DO_NOTHING, blank=True, null=True)
     current = models.IntegerField(blank=True, null=True)
 
     class Meta:
         db_table = 'user_program'
-
-
-class UserSheet(models.Model):
-    user_sheet_id = models.IntegerField(primary_key=True)
-    user_id = models.ForeignKey(WAUser, models.DO_NOTHING)
-    sheet_id = models.CharField(max_length=45, blank=True, null=True)
-    last_updated = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        db_table = 'user_sheet'
 
 
 class UserWeight(models.Model):
