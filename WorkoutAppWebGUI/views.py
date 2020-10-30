@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.timezone import datetime
 from .models import Workout, WAUser, Program, UserWeight, UserProgram, Set, ProgramDay, ExpectedSet, UnitType
 from .forms import UserWeightForm, UserProgramForm, DaySelectorForm, SetFormSet, ExpectedSetFormset, ProgramDayForm
+from .forms import WorkoutForm
 from .ml import Predictor
 from bokeh.plotting import figure
 from bokeh.embed import components
@@ -182,7 +183,7 @@ class WorkoutView(LoginRequiredMixin, generic.DetailView):
 
 class AddWorkoutView(LoginRequiredMixin, generic.CreateView):
     model = Workout
-    fields = ['date']
+    form_class = WorkoutForm
     template_name = 'WorkoutAppWebGUI/add_workout.html'
     login_url = 'login/'
     redirect_field_name = ''
@@ -216,13 +217,22 @@ class AddWorkoutView(LoginRequiredMixin, generic.CreateView):
             instance.user_id = self.request.user.wauser.pk
             instance.expected = context['day']
             instance.save()
-
-            if sets.is_valid():
-                sets.instance = instance
-                sets_instance = sets.save(commit=False)
-                for ex_set in sets_instance:
+            i = 1
+            old_exercise = 0
+            for set_instance in sets:
+                if set_instance.is_valid():
+                    ex_set = set_instance.save(commit=False)
+                    if ex_set.reps == 0:
+                        continue
+                    current_ex = ex_set.exercise_id
+                    if old_exercise != current_ex:
+                        i = 1
+                    ex_set.set_number = i
+                    ex_set.workout_id = instance.pk
                     ex_set.unit = UnitType.objects.filter(label='lbs').first()
                     ex_set.save()
+                    old_exercise = current_ex
+                    i += 1
         return super().form_valid(form)
 
     def get_success_url(self):

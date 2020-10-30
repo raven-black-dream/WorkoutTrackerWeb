@@ -166,7 +166,7 @@ class Predictor:
         return value
 
     @staticmethod
-    def get_exercise_modifiers(self):
+    def get_exercise_modifiers():
         data = {}
         with open('exercise_modifiers.csv', 'r') as infile:
             for row in csv.DictReader(infile):

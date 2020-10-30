@@ -1,5 +1,5 @@
 {% extends 'WorkoutAppWebGUI/base.html' %}
-{# {% load crispy_forms_tags %} #}
+{% load crispy_forms_tags %}
 {% block content %}
     {% if form.errors %}
     {% for field in form %}
@@ -18,10 +18,7 @@
 
     <h3>Workout</h3>
     <form method="post">{% csrf_token %}
-        {{ form }}
-    <h4>Sets:</h4>
-        {{ sets.as_ul }}
-    <input type="submit" value="Save">
+        {% crispy form %}
     </form>
 
 {% endblock %}
