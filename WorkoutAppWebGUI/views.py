@@ -1,11 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.views import generic
 from django.db.models import Avg, Max
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import datetime
 from .models import Workout, WAUser, Program, UserWeight, UserProgram, Set, ProgramDay, ExpectedSet, UnitType
-from .forms import UserWeightForm, UserProgramForm, DaySelectorForm, SetFormSet
+from .forms import UserWeightForm, UserProgramForm, DaySelectorForm, SetFormSet, ExpectedSetFormset, ProgramDayForm
 from .ml import Predictor
 from bokeh.plotting import figure
 from bokeh.embed import components
@@ -21,6 +21,14 @@ def index(request):
 
 def contact(request):
     return render(request, 'WorkoutAppWebGUI/contact.html', {})
+
+
+def remove_day(request, *args, **kwargs):
+    if request.POST:
+        day = ProgramDay.objects.filter(pk=kwargs['day_id'])
+        day.delete()
+
+    return reverse('program_day_list', kwargs={'pk': kwargs['program_id']})
 
 
 @login_required()
@@ -100,7 +108,6 @@ def choose_day(request):
     choices = [((day.program.program_id, day.day_name), day.day_name) for day in days]
     choices.insert(0, ((None, "Different Workout"), "Different Workout"))
     form.declared_fields['day_selector'].choices = choices
-    context = {}
     if request.GET:
         temp = request.GET['day_selector']
         temp = temp[1:-1].split(', ')
@@ -177,6 +184,8 @@ class AddWorkoutView(LoginRequiredMixin, generic.CreateView):
     model = Workout
     fields = ['date']
     template_name = 'WorkoutAppWebGUI/add_workout.html'
+    login_url = 'login/'
+    redirect_field_name = ''
 
     def get_form(self, form_class=None):
         form = super(AddWorkoutView, self).get_form(form_class)
@@ -203,22 +212,149 @@ class AddWorkoutView(LoginRequiredMixin, generic.CreateView):
         form = context['form']
         if form.is_valid():
             instance = form.save(commit=False)
-            instance.pk = Workout.objects.all().aggregate(Max('workout_id'))['workout_id__max'] + 1
             instance.complete = 1
             instance.user_id = self.request.user.wauser.pk
             instance.expected = context['day']
             instance.save()
 
-        if sets.is_valid():
-            sets.instance = instance
-            sets_instance = sets.save(commit=False)
-            max_id = Set.objects.all().aggregate(Max('set_id'))['set_id__max'] + 1
-            for ex_set in sets_instance:
-                ex_set.pk = max_id
-                ex_set.unit = UnitType.objects.filter(label='lbs').first()
-                ex_set.save()
-                max_id += 1
+            if sets.is_valid():
+                sets.instance = instance
+                sets_instance = sets.save(commit=False)
+                for ex_set in sets_instance:
+                    ex_set.unit = UnitType.objects.filter(label='lbs').first()
+                    ex_set.save()
         return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('landing')
+
+
+class CreateProgramView(LoginRequiredMixin, UserPassesTestMixin, generic.CreateView):
+    model = Program
+    fields = ['program_name']
+    template_name = 'WorkoutAppWebGUI/add_program.html'
+    login_url = 'login/'
+    redirect_field_name = ''
+
+    def test_func(self):
+        return self.request.user.groups.all()[0].name == 'trainer'
+
+    def get_success_url(self):
+        return reverse('program_day_list', kwargs={'pk': self.object.pk})
+
+
+class ProgramListView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView):
+    model = Program
+    template_name = 'WorkoutAppWebGUI/program_list.html'
+    login_url = 'login/'
+    redirect_field_name = ''
+
+    def get_queryset(self):
+        if not self.request.user.groups.all()[0].name == 'trainer':
+            queryset = super(ProgramListView, self).get_queryset().filter(user_id=self.request.user.wauser.pk)
+        else:
+            queryset = super(ProgramListView, self).get_queryset().all()
+
+        return queryset
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super(ProgramListView, self).get_context_data()
+        context['program_list'] = Program.objects.all()
+        return context
+
+    def test_func(self):
+        return self.request.user.groups.all()[0].name == 'trainer'
+
+
+class ProgramDayListView(LoginRequiredMixin, generic.ListView):
+    model = ProgramDay
+    template_name = 'WorkoutAppWebGUI/program_day_list.html'
+    login_url = 'login/'
+    redirect_field_name = ''
+
+    def get_queryset(self):
+        if not self.request.user.groups.all()[0].name == 'trainer':
+            queryset = super(ProgramDayListView, self).get_queryset().filter(user_id=self.request.user.wauser.pk)
+        else:
+            queryset = super(ProgramDayListView, self).get_queryset().all()
+        return queryset
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super(ProgramDayListView, self).get_context_data(**kwargs)
+        program = Program.objects.filter(program_id=self.kwargs['pk']).first()
+        context['program'] = program
+        context['days'] = ProgramDay.objects.filter(program_id=self.kwargs['pk']).all()
+        return context
+
+    def test_func(self):
+        return self.request.user.groups.all()[0].name == 'trainer'
+
+
+class ProgramDayDetailView(LoginRequiredMixin, generic.DetailView):
+    model = ProgramDay
+    template_name = 'WorkoutAppWebGUI/day_detail.html'
+    login_url = 'login/'
+    redirect_field_name = ''
+
+    def get_context_data(self, **kwargs):
+        context = super(ProgramDayDetailView, self).get_context_data(**kwargs)
+        context['set_list'] = ExpectedSet.objects.filter(day_id=self.kwargs['pk'])
+        day = ProgramDay.objects.filter(program_day_id=self.kwargs['pk']).values('day_name').first()
+        context['day_name'] = day['day_name']
+        return context
+
+
+class ProgramDayUpdate(LoginRequiredMixin, generic.UpdateView):
+    pass
+
+
+class ProgramDayCreate(LoginRequiredMixin, UserPassesTestMixin, generic.CreateView):
+    model = ProgramDay
+    form_class = ProgramDayForm
+    template_name = 'WorkoutAppWebGUI/create_day.html'
+    login_url = 'login/'
+    redirect_field_name = ''
+
+    def test_func(self):
+        return self.request.user.groups.all()[0].name == 'trainer'
+
+    def get_context_data(self, **kwargs):
+        context = super(ProgramDayCreate, self).get_context_data(**kwargs)
+        context['program'] = Program.objects.filter(pk=self.kwargs['program_id']).first()
+        if self.request.POST:
+            context['sets'] = ExpectedSetFormset(self.request.POST)
+        else:
+            context['sets'] = ExpectedSetFormset()
+        return context
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        sets = context['sets']
+        form = context['form']
+
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.program = context['program']
+            instance.save()
+            sets.instance = instance
+            i = 1
+            old_exercise = 0
+            for set_instance in sets:
+                if set_instance.is_valid():
+                    ex_set = set_instance.save(commit=False)
+                    if ex_set.exercise_id is None:
+                        continue
+                    current_ex = ex_set.exercise_id
+                    if old_exercise != current_ex:
+                        i = 1
+
+                    ex_set.set_num = i
+                    ex_set.day_id = instance.pk
+                    ex_set.save()
+                    old_exercise = current_ex
+                    i += 1
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('program_day_list', kwargs={'pk': self.kwargs['program_id']})
+

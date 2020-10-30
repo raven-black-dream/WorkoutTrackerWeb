@@ -1,0 +1,25 @@
+{% extends 'WorkoutAppWebGUI/base.html' %}
+{% block content %}
+    <h3>{{ day_name }}</h3>
+
+    <table class='table table-striped table-hover'>
+    <thead class="thead-dark">
+        <tr>
+            <th>Exercise</th>
+            <th>Min Reps</th>
+            <th>Max Reps</th>
+            <th>RPE</th>
+        </tr>
+    </thead>
+        {% for ex_set in set_list %}
+            <tr>
+            <td>{{ ex_set.exercise.name }}</td>
+            <td>{{ ex_set.reps_min }}</td>
+            <td>{{ ex_set.reps_max }}</td>
+            <td>{{ ex_set.rpe }}</td>
+            </tr>
+        {% endfor %}
+
+    </table>
+
+{% endblock %}

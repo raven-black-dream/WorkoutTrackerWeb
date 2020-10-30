@@ -1,31 +1,34 @@
 {% extends 'WorkoutAppWebGUI/base.html' %}
 {% block content %}
     <h3>{{ program.program_name }}</h3>
-
-    <table class='table table-striped table-hover'>
-    <thead class="thead-dark">
-        <tr>
-            <th>Day</th>
-            <th>Exercise</th>
-            <th>Min Reps</th>
-            <th>Max Reps</th>
-            <th>RPE</th>
-        </tr>
-    </thead>
     {% for key, value in program_days.items %}
-        <tr>
-        <th>{{ key }}</th>
-        </tr>
-        {% for ex_set in value %}
-            <tr>
-            <td></td>
-            <td>{{ ex_set.exercise.name }}</td>
-            <td>{{ ex_set.reps_min }}</td>
-            <td>{{ ex_set.reps_max }}</td>
-            <td>{{ ex_set.rpe }}</td>
-            </tr>
-        {% endfor %}
-
+        <div class="card">
+            <div class="card-header">
+                {{ key }}
+            </div>
+            <div class="card-body">
+            <table class='table table-striped table-hover'>
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Exercise</th>
+                        <th>Min Reps</th>
+                        <th>Max Reps</th>
+                        <th>RPE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for ex_set in value %}
+                    <tr>
+                        <td>{{ ex_set.exercise.name }}</td>
+                        <td>{{ ex_set.reps_min }}</td>
+                        <td>{{ ex_set.reps_max }}</td>
+                        <td>{{ ex_set.rpe }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
     {% endfor %}
     </table>
 

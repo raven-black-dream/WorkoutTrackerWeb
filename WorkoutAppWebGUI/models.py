@@ -44,7 +44,7 @@ class ExpectedSet(models.Model):
     reps_min = models.IntegerField()
     rpe = models.DecimalField(max_digits=10, decimal_places=0)
     reps_max = models.IntegerField(blank=True, null=True)
-    amrap = models.IntegerField(blank=True, null=True)
+    amrap = models.BooleanField()
 
     class Meta:
         db_table = 'expected_set'

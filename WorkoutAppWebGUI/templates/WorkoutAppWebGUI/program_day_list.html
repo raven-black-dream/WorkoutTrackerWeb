@@ -1,0 +1,30 @@
+{% extends 'WorkoutAppWebGUI/base.html' %}
+{% load app_extras %}
+{% block content %}
+    {% if program %}
+    <div class="card">
+        <div class="card-header">
+            {{ program.program_name }}
+        </div>
+        <div class="card-body">
+            {% for day in days %}
+            <a href="{% url 'day_detail' pk=day.pk %}">{{ day.day_name }}</a>
+            {% if user|has_group:'trainer' %}
+            <div class="btn-group">
+                <a class="btn btn-secondary" role="button" href="{% url 'day_update' day_id=day.pk %}">
+                    Edit Program Day
+                </a>
+                <a class="btn btn-secondary" role="button" href="{% url 'day_remove' program_id=program.pk   day_id=day.pk %}">
+                    Delete Program Day
+                </a>
+            </div>
+            {% endif %}
+            <br>
+            {% endfor %}
+        </div>
+        <a class="btn btn-secondary" role="button" href="{% url 'create_day' program_id=program.pk %}">
+            Add Program Day
+        </a>
+    </div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'WorkoutAppWebGUI/base.html' %}
+{% load app_extras %}
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            All Programs
+        </div>
+        <div class="card-body">
+            {% for program in program_list %}
+            <a href="{% url 'program_day_list' pk=program.pk %}">{{ program.program_name }}</a>
+            <br>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
