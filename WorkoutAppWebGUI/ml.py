@@ -17,6 +17,8 @@ class Predictor:
         self.model = pickle.load(open("SVCModel.pkl", 'rb'))
 
     def fit_svc(self):
+        if self.previous_data.empty:
+            return None
         ex_data = self.create_exercise_dataset()
         ex_data['suggestion'] = self.model.predict(ex_data[["scaled_by_min", "scaled_by_max"]])
         return ex_data
@@ -137,6 +139,8 @@ class Predictor:
         data = {}
         rep_ranges = self.get_rep_ranges()
         fitted = self.fit_svc()
+        if fitted is None:
+            return self.parse_data()
         exercise_names = {ex.exercise_id: ex.name for ex in ExerciseType.objects.all()}
         for exercise in fitted.exercise_id.unique():
             exercise_data = fitted[fitted["exercise_id"] == exercise]

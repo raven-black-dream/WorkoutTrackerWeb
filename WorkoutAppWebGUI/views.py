@@ -151,10 +151,6 @@ class ProgramView(LoginRequiredMixin, generic.DetailView):
     login_url = 'login/'
     redirect_field_name = ''
 
-    def get_queryset(self):
-        query_set = super(ProgramView, self).get_queryset().filter(user_id=self.request.user.wauser.pk)
-        return query_set
-
     def get_context_data(self, **kwargs):
         context = super(ProgramView, self).get_context_data(**kwargs)
         program = UserProgram.objects.filter(user_id=self.request.user.wauser.pk).filter(current=1).first()
