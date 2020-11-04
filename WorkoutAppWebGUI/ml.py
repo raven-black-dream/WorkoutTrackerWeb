@@ -20,7 +20,7 @@ class Predictor:
         if self.previous_data.empty:
             return None
         ex_data = self.create_exercise_dataset()
-        ex_data['suggestion'] = self.model.predict(ex_data[["scaled_by_min", "scaled_by_max"]])
+        ex_data['suggestion'] = self.model.predict(ex_data[["scaled_by_min", "scaled_by_max", 'min_reps', 'max_reps']])
         return ex_data
 
     def create_exercise_dataset(self):
