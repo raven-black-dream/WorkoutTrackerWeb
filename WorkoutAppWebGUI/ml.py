@@ -32,7 +32,7 @@ class Predictor:
         for exercise in exercise_list:
             exercise_data = self.get_exercise_data(exercise)
             for rep in rep_ranges[exercise]:
-                rep_data = exercise_data[(exercise_data["reps"] >= rep[0]) & (exercise_data['reps'] <= rep[1])].copy()
+                rep_data = exercise_data[(exercise_data["reps"] >= rep[0])].copy()
                 if rep_data.empty:
                     continue
                 most_recent = max(rep_data["workout_id"])
