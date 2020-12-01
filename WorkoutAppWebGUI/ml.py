@@ -3,7 +3,7 @@ import os
 import pandas
 import pickle
 import numpy
-from .models import Set, ExpectedSet, ProgramDay, ExerciseType
+from .models import Set, ExpectedSet, ProgramDay, ExerciseType, Workout
 from sklearn import svm
 
 
@@ -12,6 +12,7 @@ class Predictor:
     def __init__(self, day, user):
         self.previous_data = self.get_previous_data(day, user)
         self.day = self.get_program_day(day)
+        self.user = user
         if not os.path.exists("SVCModel.pkl"):
             self.train_svc()
         self.model = pickle.load(open("SVCModel.pkl", 'rb'))
@@ -62,7 +63,11 @@ class Predictor:
 
     def get_exercise_data(self, exercise):
         temp = self.previous_data.copy()
-        original_data = temp[temp['exercise_id'] == exercise]
+        workout_ids = self.get_workouts()
+        if not workout_ids:
+            original_data = temp[temp['exercise_id'] == exercise]
+        else:
+            original_data = temp[(temp['exercise_id'] == exercise) & (temp.workout_id.isin(workout_ids))]
         exercise_data = original_data.groupby('workout_id').agg(
             {
                 'exercise_id': 'max',
@@ -168,6 +173,15 @@ class Predictor:
         percent = self.calculate_percentage_from_reps((rnge[0] + rnge[1])/2)
         value = numpy.floor((one_rm * percent)*0.95)
         return value
+
+    def get_workouts(self):
+        day_id = self.day.day_id.max()
+        workouts = Workout.objects.filter(expected=day_id).filter(user_id=self.user).all().values('workout_id')
+        if workouts:
+            workouts = [workout['workout_id'] for workout in workouts]
+        else:
+            workouts = []
+        return workouts
 
     @staticmethod
     def get_exercise_modifiers():
