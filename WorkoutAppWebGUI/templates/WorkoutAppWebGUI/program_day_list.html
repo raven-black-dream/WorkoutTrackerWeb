@@ -11,7 +11,7 @@
             <a href="{% url 'day_detail' pk=day.pk %}">{{ day.day_name }}</a>
             {% if user|has_group:'trainer' %}
             <div class="btn-group">
-                <a class="btn btn-secondary" role="button" href="{% url 'day_update' day_id=day.pk %}">
+                <a class="btn btn-secondary" role="button" href="{% url 'day_update' pk=day.pk %}">
                     Edit Program Day
                 </a>
                 <a class="btn btn-secondary" role="button" href="{% url 'day_remove' program_id=program.pk   day_id=day.pk %}">

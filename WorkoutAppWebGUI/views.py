@@ -310,8 +310,52 @@ class ProgramDayDetailView(LoginRequiredMixin, generic.DetailView):
         return context
 
 
-class ProgramDayUpdate(LoginRequiredMixin, generic.UpdateView):
-    pass
+class ProgramDayUpdate(LoginRequiredMixin, UserPassesTestMixin,generic.UpdateView):
+    model = ProgramDay
+    form_class = ProgramDayForm
+    template_name = 'WorkoutAppWebGUI/create_day.html'
+    login_url = 'login/'
+    redirect_field_name = ''
+
+    def test_func(self):
+        return self.request.user.groups.all()[0].name == 'trainer'
+
+    def get_context_data(self, **kwargs):
+        context = super(ProgramDayUpdate, self).get_context_data(**kwargs)
+        if self.request.POST:
+            context['sets'] = ExpectedSetFormset(self.request.POST, instance=self.object)
+        else:
+            context['sets'] = ExpectedSetFormset(instance=self.object)
+        return context
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        sets = context['sets']
+        form = context['form']
+
+        if form.is_valid():
+            instance = form.save(commit=False)
+            sets.instance = instance
+            i = 1
+            old_exercise = 0
+            for set_instance in sets:
+                if set_instance.is_valid():
+                    ex_set = set_instance.save(commit=False)
+                    if ex_set.exercise_id is None:
+                        continue
+                    current_ex = ex_set.exercise_id
+                    if old_exercise != current_ex:
+                        i = 1
+
+                    ex_set.set_num = i
+                    ex_set.day_id = instance.pk
+                    ex_set.save()
+                    old_exercise = current_ex
+                    i += 1
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('program_list')
 
 
 class ProgramDayCreate(LoginRequiredMixin, UserPassesTestMixin, generic.CreateView):
