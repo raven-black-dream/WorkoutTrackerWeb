@@ -64,10 +64,11 @@ class Predictor:
     def get_exercise_data(self, exercise):
         temp = self.previous_data.copy()
         workout_ids = self.get_workouts()
-        if not workout_ids:
+        valid_workouts = temp[temp.workout_id.isin(workout_ids)]
+        if not workout_ids or exercise not in valid_workouts.exercise_id.tolist():
             original_data = temp[temp['exercise_id'] == exercise]
         else:
-            original_data = temp[(temp['exercise_id'] == exercise) & (temp.workout_id.isin(workout_ids))]
+            original_data = valid_workouts[valid_workouts['exercise_id'] == exercise]
         exercise_data = original_data.groupby('workout_id').agg(
             {
                 'exercise_id': 'max',
