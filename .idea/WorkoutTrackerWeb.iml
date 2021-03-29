@@ -15,17 +15,19 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/venv" />
+      <excludePattern pattern="C:\Users\evanh\Anaconda3\envs\TUTRPage" />
+      <excludePattern pattern=" C:\Users\evanh\Anaconda3\envs\pythonProject" />
+      <excludePattern pattern=" C:\Users\evanh\Anaconda3\envs\WorkoutTracker" />
+      <excludePattern pattern=" C:\Users\evanh\Anaconda3\envs\WorkoutTrackerReports" />
+      <excludePattern pattern=" WorkoutAPP" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.7 (WorkoutTrackerWeb)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="WorkoutTracker" />
+  </component>
+  <component name="PyDocumentationSettings">
+    <option name="renderExternalDocumentation" value="true" />
   </component>
   <component name="TemplatesService">
     <option name="TEMPLATE_CONFIGURATION" value="Django" />
-    <option name="TEMPLATE_FOLDERS">
-      <list>
-        <option value="$MODULE_DIR$/../WorkoutTrackerWeb\templates" />
-      </list>
-    </option>
   </component>
 </module>
