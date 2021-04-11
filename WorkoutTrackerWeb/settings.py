@@ -28,9 +28,9 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'tqbm_!ywq_u!s5vmfyai0-d77=-pz6
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
-#DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
+# DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'hidden-tor-4381.herokuapp.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'hidden-tor-4381.herokuapp.com', 'base45.ca']
 
 
 # Application definition
@@ -137,6 +137,6 @@ LOGOUT_REDIRECT_URL = '/'
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
-#django_heroku.settings(locals())
+django_heroku.settings(locals())
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
