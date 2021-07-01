@@ -139,6 +139,7 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 # Security Related Settings
+CSRF_TRUSTED_ORIGINS = ["base45.ca", 'www.base45.ca']
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
