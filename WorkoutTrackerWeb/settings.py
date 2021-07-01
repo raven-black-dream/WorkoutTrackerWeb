@@ -30,7 +30,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'tqbm_!ywq_u!s5vmfyai0-d77=-pz6
 # DEBUG = False
 DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'hidden-tor-4381.herokuapp.com', 'base45.ca']
+ALLOWED_HOSTS = ['127.0.0.1', 'hidden-tor-4381.herokuapp.com', 'base45.ca', 'www.base45.ca']
 
 # Email Settings
 EMAIL_HOST = os.environ.get('MAILGUN_SMTP_SERVER', '')
