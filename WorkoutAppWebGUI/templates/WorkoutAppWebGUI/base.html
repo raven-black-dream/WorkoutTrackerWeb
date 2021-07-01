@@ -41,6 +41,7 @@
               {% if user|has_group:'trainer' %}
                   <a class="dropdown-item" href="{% url 'program_list' %}">Program List</a>
                   <a class="dropdown-item" href="{% url 'create_program' %}">Create Program</a>
+                  <a class="dropdown-item" href="{% url 'add_user' %}">Add User</a>
               {% endif %}
             </div>
           </li>

@@ -8,7 +8,8 @@
             <p>Current Weight: {{ user_weight }}</p>
         </div>
         <div>
-        <button><a href="{% url 'user_edit' %}">Edit</a></button>
+            <p><a href="{% url 'user_edit' %}">Edit</a></p>
+            <p><a href="{% url 'password_reset' %}">Reset Password</a></p>
         </div>
     {% endif %}
 

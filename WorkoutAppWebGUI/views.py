@@ -3,10 +3,11 @@ from django.views import generic
 from django.db.models import Avg, Max
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.utils.timezone import datetime
 from .models import Workout, WAUser, Program, UserWeight, UserProgram, Set, ProgramDay, ExpectedSet, UnitType
 from .forms import UserWeightForm, UserProgramForm, DaySelectorForm, SetFormSet, ExpectedSetFormset, ProgramDayForm
-from .forms import WorkoutForm
+from .forms import WorkoutForm, AddUserForm
 from .ml import Predictor
 from bokeh.plotting import figure
 from bokeh.embed import components
@@ -143,6 +144,18 @@ class UserView(LoginRequiredMixin, generic.DetailView):
         program = UserProgram.objects.filter(user_id=self.kwargs['pk']).filter(current=1).first()
         context['program'] = Program.objects.get(pk=program.program_id)
         return context
+
+
+class AddUser(LoginRequiredMixin, generic.edit.CreateView):
+    model = User
+    form_class = AddUserForm
+    template_name = 'WorkoutAppWebGUI/add_user.html'
+
+    def form_valid(self, form):
+        user = form.save()
+        wauser = WAUser(first_name=user.first_name, last_name=user.last_name, auth_user=user)
+        wauser.save()
+        return super().form_valid(form)
 
 
 class ProgramView(LoginRequiredMixin, generic.DetailView):
