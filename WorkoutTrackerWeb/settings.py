@@ -142,6 +142,6 @@ LOGOUT_REDIRECT_URL = '/'
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
-# django_heroku.settings(locals())
+django_heroku.settings(locals())
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
