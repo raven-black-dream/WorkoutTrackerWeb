@@ -17,7 +17,8 @@
     {% endif %}
 
     <h3>Workout</h3>
-    <form method="post">{% csrf_token %}
+    <form method="post">
+        {% csrf_token %}
         {% crispy form %}
     </form>
 

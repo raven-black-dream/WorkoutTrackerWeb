@@ -15,6 +15,7 @@
     {% for form in forms %}
         <div class="border" style="padding-top: 10px">
             <form method="post" style="padding-bottom: 10px">
+                {% csrf_token %}
                 {{ form.as_p }}
                 <input type="submit" value="save changes">
             </form>
