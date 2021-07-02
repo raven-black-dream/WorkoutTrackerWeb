@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.forms.models import inlineformset_factory
-from .models import WAUser, UserWeight, UserProgram, Workout, Set, Program, ProgramDay, ExpectedSet
+from .models import WAUser, UserWeight, UserProgram, Workout, Set, Program, ProgramDay, ExpectedSet, ExerciseType
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Fieldset, Div, HTML, ButtonHolder, Submit
 from .layout import *
@@ -19,7 +19,14 @@ class AddUserForm(UserCreationForm):
     """Form for User"""
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email']
+        fields = ['username', 'first_name', 'last_name']
+
+
+class ExerciseForm(forms.ModelForm):
+    """Form for ExerciseType"""
+    class Meta:
+        model = ExerciseType
+        fields = ['name', 'weighted', 'weight_step']
 
 
 class UserWeightForm(forms.ModelForm):

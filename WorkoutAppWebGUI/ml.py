@@ -136,18 +136,13 @@ class Predictor:
         return data
 
     def predict(self):
-        if os.path.exists('exercise_list.pkl'):
-            exercise_file = open('exercise_list.pkl', 'rb')
-            exercise_modifiers = pickle.load(exercise_file)
-        else:
-            exercise_modifiers = self.get_exercise_modifiers()
-            pickle.dump(exercise_modifiers, open('exercise_list.pkl', 'wb'))
         data = {}
         rep_ranges = self.get_rep_ranges()
         fitted = self.fit_svc()
         if fitted is None:
             return self.parse_data()
         exercise_names = {ex.exercise_id: ex.name for ex in ExerciseType.objects.all()}
+        exercise_modifiers = {ex.name: ex.weight_step for ex in ExerciseType.objects.all()}
         for exercise in fitted.exercise_id.unique():
             exercise_data = fitted[fitted["exercise_id"] == exercise]
             exercise_name = exercise_names[exercise]
@@ -160,8 +155,9 @@ class Predictor:
                     data[exercise_name][rep_range] = self.rounding_for_weights(value, exercise_modifiers[exercise_name])
                 else:
                     degree_to_modify = numpy.floor((rep_data['reps']-rep_data['max_reps'])+1) * rep_data["suggestion"][0]
-                    value = rep_data['weight'].values + (degree_to_modify * exercise_modifiers[exercise_name])
-                    data[exercise_name][rep_range] = value.iat[0]
+                    value = rep_data['weight'].values + (degree_to_modify * float(exercise_modifiers[exercise_name]))
+                    base = float(exercise_modifiers[exercise_name])
+                    data[exercise_name][rep_range] = base * round(value.iat[0]/base)
 
         return self.parse_data(data)
 

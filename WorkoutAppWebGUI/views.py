@@ -6,8 +6,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.utils.timezone import datetime
 from .models import Workout, WAUser, Program, UserWeight, UserProgram, Set, ProgramDay, ExpectedSet, UnitType
+from .models import ExerciseType
 from .forms import UserWeightForm, UserProgramForm, DaySelectorForm, SetFormSet, ExpectedSetFormset, ProgramDayForm
-from .forms import WorkoutForm, AddUserForm
+from .forms import WorkoutForm, AddUserForm, ExerciseForm
 from .ml import Predictor
 from bokeh.plotting import figure
 from bokeh.embed import components
@@ -149,13 +150,18 @@ class UserView(LoginRequiredMixin, generic.DetailView):
 class AddUser(LoginRequiredMixin, generic.edit.CreateView):
     model = User
     form_class = AddUserForm
+    login_url = 'login/'
     template_name = 'WorkoutAppWebGUI/add_user.html'
+    redirect_field_name = ''
 
     def form_valid(self, form):
         user = form.save()
         wauser = WAUser(first_name=user.first_name, last_name=user.last_name, auth_user=user)
         wauser.save()
         return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('landing')
 
 
 class ProgramView(LoginRequiredMixin, generic.DetailView):
@@ -421,3 +427,26 @@ class ProgramDayCreate(LoginRequiredMixin, UserPassesTestMixin, generic.CreateVi
     def get_success_url(self):
         return reverse('program_day_list', kwargs={'pk': self.kwargs['program_id']})
 
+
+class AddExerciseView(LoginRequiredMixin, generic.edit.CreateView):
+    model = ExerciseType
+    form_class = ExerciseForm
+    login_url = 'login/'
+    template_name = 'WorkoutAppWebGUI/add_exercise.html'
+    redirect_field_name = ''
+
+    def form_valid(self, form):
+        exercise = form.save()
+        return super(AddExerciseView, self).form_valid(form)
+
+
+class UpdateExerciseView(LoginRequiredMixin, generic.edit.UpdateView):
+    model = ExerciseType
+    form_class = ExerciseForm
+    login_url = 'login/'
+    template_name = 'WorkoutAppWebGUI/update_exercise.html'
+    redirect_field_name = ''
+
+    def form_valid(self, form):
+        form.save()
+        return super(UpdateExerciseView, self).form_valid(form)

@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 class ExerciseType(models.Model):
     exercise_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=45)
+    weighted = models.BooleanField(default=True)
+    weight_step = models.DecimalField(default=5, decimal_places=2, max_digits=4)
 
     class Meta:
         db_table = 'exercise_type'
