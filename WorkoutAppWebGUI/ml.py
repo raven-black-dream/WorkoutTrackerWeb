@@ -53,6 +53,7 @@ class Predictor:
         return data
 
     def get_rep_ranges(self):
+        possible_rr = {5: 5, 8: 12, 15: 20}
         rep_ranges = {}
         exercise_list = self.day.exercise_id.unique()
         for exercise in exercise_list:
@@ -143,6 +144,7 @@ class Predictor:
             return self.parse_data()
         exercise_names = {ex.exercise_id: ex.name for ex in ExerciseType.objects.all()}
         exercise_modifiers = {ex.name: ex.weight_step for ex in ExerciseType.objects.all()}
+        exercise_types = {ex.name: ex.weighted for ex in ExerciseType.objects.all()}
         for exercise in fitted.exercise_id.unique():
             exercise_data = fitted[fitted["exercise_id"] == exercise]
             exercise_name = exercise_names[exercise]
@@ -153,11 +155,17 @@ class Predictor:
                 if rep_data.empty:
                     value = self.interpolate_missing_vals(exercise_data, rep_range)
                     data[exercise_name][rep_range] = self.rounding_for_weights(value, exercise_modifiers[exercise_name])
-                else:
+                elif exercise_types[exercise_name]:
                     degree_to_modify = numpy.floor((rep_data['reps']-rep_data['max_reps'])+1) * rep_data["suggestion"][0]
                     value = rep_data['weight'].values + (degree_to_modify * float(exercise_modifiers[exercise_name]))
                     base = float(exercise_modifiers[exercise_name])
                     data[exercise_name][rep_range] = base * round(value.iat[0]/base)
+                else:
+                    if rep_data['suggestion'] < 0:
+                        rep_range[0] = rep_data['reps']
+                    elif rep_data['suggestion'] < 0 or rep_data['reps'] >= rep_data['max_reps']:
+                        rep_range[1] = rep_data['reps'] + 2
+                    data[exercise_name][rep_range] = 0
 
         return self.parse_data(data)
 

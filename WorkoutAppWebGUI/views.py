@@ -212,7 +212,7 @@ class AddWorkoutView(LoginRequiredMixin, generic.CreateView):
     def get_context_data(self, **kwargs):
         data = super(AddWorkoutView, self).get_context_data(**kwargs)
         data['day'] = ProgramDay.objects.filter(program_day_id=self.kwargs['day_id']).first()
-        day = ExpectedSet.objects.filter(day_id=self.kwargs['day_id']).all()
+        day = ExpectedSet.objects.filter(day_id=self.kwargs['day_id']).order_by('exp_set_id', 'set_num').all()
         if self.request.POST:
             data['sets'] = SetFormSet(self.request.POST)
         else:
