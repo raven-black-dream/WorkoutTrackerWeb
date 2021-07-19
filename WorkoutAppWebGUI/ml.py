@@ -32,34 +32,34 @@ class Predictor:
         rep_ranges = self.get_rep_ranges()
         for exercise in exercise_list:
             exercise_data = self.get_exercise_data(exercise)
-            for rep in rep_ranges[exercise]:
-                rep_data = exercise_data[(exercise_data["reps"] >= rep[0])].copy()
-                if rep_data.empty:
-                    continue
-                most_recent = max(rep_data["workout_id"])
-                ex_data = prev_data[(prev_data["workout_id"] == most_recent) & (prev_data["exercise_id"] == exercise)]
-                if rep[0] == rep[1] and rep[0] in [1, 2, 3]:
-                    ex_data = ex_data[ex_data["reps"] == rep[0]]
-                ex_data = ex_data.groupby('exercise_id').agg({
-                    "reps": "mean",
-                    "weight": "mean"})
-                ex_data = ex_data.reset_index()
-                ex_data['min_reps'] = rep[0]
-                ex_data['max_reps'] = rep[1]
-                ex_data['scaled_by_min'] = (ex_data['reps'] - ex_data["min_reps"]) / ex_data['min_reps']
-                ex_data['scaled_by_max'] = (ex_data['reps'] - ex_data["max_reps"]) / ex_data['max_reps']
-                data = data.append(ex_data)
+            most_recent = exercise_data['workout_id'][0]
+            ex_data = prev_data[(prev_data["workout_id"] == most_recent) & (prev_data["exercise_id"] == exercise)]
+            ex_data = ex_data.groupby('exercise_id').agg({
+                "reps": "mean",
+                "weight": "mean"})
+            ex_data = ex_data.reset_index()
+            rep_data = self.day.loc[self.day['exercise_id'] == exercise].copy()
+            rep_data = rep_data.groupby('exercise_id').agg({'reps_min': 'mean', 'reps_max': 'mean'})
+            rep_data = rep_data.reset_index()
+            ex_data['min_reps'] = rep_data['reps_min']
+            ex_data['max_reps'] = rep_data['reps_max']
+            ex_data['scaled_by_min'] = (ex_data['reps'] - rep_data["reps_min"]) / rep_data['reps_min']
+            ex_data['scaled_by_max'] = (ex_data['reps'] - rep_data['reps_max']) / rep_data['reps_max']
+            data = data.append(ex_data)
 
         return data
 
     def get_rep_ranges(self):
-        possible_rr = {5: 5, 8: 12, 15: 20}
         rep_ranges = {}
         exercise_list = self.day.exercise_id.unique()
         for exercise in exercise_list:
             ex_data = self.day[self.day['exercise_id'] == exercise]
-            ex_reps = [(mn, mx) for mn, mx in zip(ex_data['reps_min'], ex_data['reps_max'])]
+            ex_reps = [(mn, mx, amrap) for mn, mx, amrap in zip(ex_data['reps_min'], ex_data['reps_max'], ex_data['amrap'])]
             rep_ranges[exercise] = list(set(ex_reps))
+            if len(rep_ranges[exercise]) == 2:
+                rng1 = rep_ranges[exercise][0]
+                rng2 = rep_ranges[exercise][1]
+                rep_ranges[exercise] = [(int((rng1[0] + rng2[0])/2), int((rng1[1] + rng2[1])/2))]
         return rep_ranges
 
     def get_exercise_data(self, exercise):
@@ -111,16 +111,10 @@ class Predictor:
                 if not recommended or exercise_name not in recommended.keys():
                     set_data['weight'] = 0
                 else:
-                    if not ex_set['reps_min'].empty and not ex_set['reps_max'].empty:
-                        set_data['weight'] = int(recommended[exercise_name][(ex_set['reps_min'][j], ex_set['reps_max'][j])])
-                    elif not ex_set['reps_min'].empty and ex_set['amrap'][j] == 1:
-                        possible_range = list(recommended[exercise_name].keys())
-                        max_reps = [rng[1] for rng in possible_range if rng[0] == ex_set['reps_min']]
-                        if not max_reps:
-                            # handle exercises where all sets are AMRAP NOT IMPLEMENTED
-                            set_data['weight'] = 0
-                        else:
-                            set_data['weight'] = int(recommended[exercise_name][(ex_set['reps_min'][j], max_reps[j])])
+                    if not ex_set['amrap'][j]:
+                        set_data['weight'] = int(recommended[exercise_name])
+                    elif ex_set['amrap'][j]:
+                        set_data['weight'] = int(recommended[exercise_name])
                     else:
                         set_data['weight'] = 0
                 set_data['order'] = i
@@ -138,7 +132,6 @@ class Predictor:
 
     def predict(self):
         data = {}
-        rep_ranges = self.get_rep_ranges()
         fitted = self.fit_svc()
         if fitted is None:
             return self.parse_data()
@@ -149,23 +142,14 @@ class Predictor:
             exercise_data = fitted[fitted["exercise_id"] == exercise]
             exercise_name = exercise_names[exercise]
             data[exercise_name] = {}
-            for rep_range in rep_ranges[exercise]:
-                rep_data = exercise_data[(exercise_data["min_reps"] == rep_range[0]) &
-                                         (exercise_data["max_reps"] == rep_range[1])]
-                if rep_data.empty:
-                    value = self.interpolate_missing_vals(exercise_data, rep_range)
-                    data[exercise_name][rep_range] = self.rounding_for_weights(value, exercise_modifiers[exercise_name])
-                elif exercise_types[exercise_name]:
-                    degree_to_modify = numpy.floor((rep_data['reps']-rep_data['max_reps'])+1) * rep_data["suggestion"][0]
-                    value = rep_data['weight'].values + (degree_to_modify * float(exercise_modifiers[exercise_name]))
-                    base = float(exercise_modifiers[exercise_name])
-                    data[exercise_name][rep_range] = base * round(value.iat[0]/base)
-                else:
-                    if rep_data['suggestion'] < 0:
-                        rep_range[0] = rep_data['reps']
-                    elif rep_data['suggestion'] < 0 or rep_data['reps'] >= rep_data['max_reps']:
-                        rep_range[1] = rep_data['reps'] + 2
-                    data[exercise_name][rep_range] = 0
+            if exercise_types[exercise_name]:
+
+                degree = numpy.floor((exercise_data['reps']-exercise_data['max_reps'])+1) * exercise_data["suggestion"][0]
+                value = (degree * float(exercise_modifiers[exercise_name]))
+                base = float(exercise_modifiers[exercise_name])
+                data[exercise_name] = exercise_data['weight'].iat[0] + self.rounding_for_weights(value.iat[0], base)
+            else:
+                data[exercise_name] = 0
 
         return self.parse_data(data)
 
