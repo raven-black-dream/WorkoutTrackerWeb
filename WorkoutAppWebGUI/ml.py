@@ -21,7 +21,7 @@ class Predictor:
         if self.previous_data.empty:
             return None
         ex_data = self.create_exercise_dataset()
-        ex_data['suggestion'] = self.model.predict(ex_data[["scaled_by_min", "scaled_by_max", 'min_reps', 'max_reps']])
+        ex_data['suggestion'] = self.model.predict(ex_data[["scaled_by_min", "scaled_by_max", 'min_reps', 'max_reps', 'rpe']])
         return ex_data
 
     def create_exercise_dataset(self):
@@ -34,9 +34,11 @@ class Predictor:
             exercise_data = self.get_exercise_data(exercise)
             most_recent = exercise_data['workout_id'][0]
             ex_data = prev_data[(prev_data["workout_id"] == most_recent) & (prev_data["exercise_id"] == exercise)]
+            ex_data['rpe'] = ex_data['rpe'].astype('int64')
             ex_data = ex_data.groupby('exercise_id').agg({
                 "reps": "mean",
-                "weight": "mean"})
+                "weight": "mean",
+                'rpe': 'mean'})
             ex_data = ex_data.reset_index()
             rep_data = self.day.loc[self.day['exercise_id'] == exercise].copy()
             rep_data = rep_data.groupby('exercise_id').agg({'reps_min': 'mean', 'reps_max': 'mean'})
