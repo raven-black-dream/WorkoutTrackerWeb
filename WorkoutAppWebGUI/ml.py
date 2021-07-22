@@ -13,9 +13,9 @@ class Predictor:
         self.previous_data = self.get_previous_data(day, user)
         self.day = self.get_program_day(day)
         self.user = user
-        if not os.path.exists("SVCModel.pkl"):
+        if not os.path.exists("RFCModel.pkl"):
             self.train_svc()
-        self.model = pickle.load(open("SVCModel.pkl", 'rb'))
+        self.model = pickle.load(open("RFCModel.pkl", 'rb'))
 
     def fit_svc(self):
         if self.previous_data.empty:
