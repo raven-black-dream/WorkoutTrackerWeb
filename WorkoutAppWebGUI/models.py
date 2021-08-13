@@ -124,3 +124,14 @@ class Workout(models.Model):
 
     class Meta:
         db_table = 'workout'
+
+        
+class Prediction(models.Model):
+    workout_id = models.ForeignKey(Workout, models.DO_NOTHING)
+    exercise = models.ForeignKey(ExerciseType, models.DO_NOTHING)
+    avg_reps = models.DecimalField(max_digits=8, decimal_places=5)
+    avg_rpe = models.DecimalField(max_digits=7, decimal_places=5)
+    recommendation = models.IntegerField()
+    user_agrees = models.BooleanField()
+    user_suggestion = models.IntegerField()
+
