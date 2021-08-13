@@ -21,7 +21,8 @@ class Predictor:
         if self.previous_data.empty:
             return None
         ex_data = self.create_exercise_dataset()
-        ex_data['suggestion'] = self.model.predict(ex_data[["scaled_by_min", "scaled_by_max", 'min_reps', 'max_reps', 'rpe']])
+        ex_data['user_id'] = self.user
+        ex_data['suggestion'] = self.model.predict(ex_data[['min_reps', 'max_reps', 'reps', 'rpe', 'set_num', 'user_id']])
         return ex_data
 
     def create_exercise_dataset(self):
@@ -33,7 +34,7 @@ class Predictor:
         for exercise in exercise_list:
             exercise_data = self.get_exercise_data(exercise)
             most_recent = exercise_data['workout_id'][0]
-            ex_data = prev_data[(prev_data["workout_id"] == most_recent) & (prev_data["exercise_id"] == exercise)]
+            ex_data = prev_data[(prev_data["workout_id"] == most_recent) & (prev_data["exercise_id"] == exercise)].copy()
             ex_data['rpe'] = ex_data['rpe'].astype('int64')
             ex_data = ex_data.groupby('exercise_id').agg({
                 "reps": "mean",
@@ -41,12 +42,13 @@ class Predictor:
                 'rpe': 'mean'})
             ex_data = ex_data.reset_index()
             rep_data = self.day.loc[self.day['exercise_id'] == exercise].copy()
-            rep_data = rep_data.groupby('exercise_id').agg({'reps_min': 'mean', 'reps_max': 'mean'})
+            rep_data = rep_data.groupby('exercise_id').agg({'reps_min': 'mean',
+                                                            'reps_max': 'mean',
+                                                            'set_num': 'max'})
             rep_data = rep_data.reset_index()
             ex_data['min_reps'] = rep_data['reps_min']
             ex_data['max_reps'] = rep_data['reps_max']
-            ex_data['scaled_by_min'] = (ex_data['reps'] - rep_data["reps_min"]) / rep_data['reps_min']
-            ex_data['scaled_by_max'] = (ex_data['reps'] - rep_data['reps_max']) / rep_data['reps_max']
+            ex_data['set_num'] = rep_data['set_num']
             data = data.append(ex_data)
 
         return data
