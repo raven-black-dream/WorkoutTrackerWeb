@@ -55,7 +55,7 @@ class ExpectedSet(models.Model):
 class Set(models.Model):
     set_id = models.AutoField(primary_key=True)
     exercise = models.ForeignKey(ExerciseType, models.DO_NOTHING)
-    workout = models.ForeignKey('Workout', models.DO_NOTHING)
+    workout = models.ForeignKey('Workout', models.CASCADE)
     reps = models.IntegerField()
     weight = models.DecimalField(max_digits=10, decimal_places=0)
     rpe = models.DecimalField(max_digits=10, decimal_places=0)
@@ -127,11 +127,14 @@ class Workout(models.Model):
 
         
 class Prediction(models.Model):
-    workout_id = models.ForeignKey(Workout, models.DO_NOTHING)
+    workout_id = models.ForeignKey(Workout, models.CASCADE)
     exercise = models.ForeignKey(ExerciseType, models.DO_NOTHING)
     avg_reps = models.DecimalField(max_digits=8, decimal_places=5)
     avg_rpe = models.DecimalField(max_digits=7, decimal_places=5)
     recommendation = models.IntegerField()
-    user_agrees = models.BooleanField()
-    user_suggestion = models.IntegerField()
+    user_agrees = models.BooleanField(blank=True, null=True)
+    user_suggestion = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'prediction'
 

@@ -17,6 +17,7 @@ urlpatterns = [
     path('workout/<int:pk>', views.WorkoutView.as_view(), name="view_workout"),
     path('record_workout/', views.choose_day, name='choose_day'),
     path('record_workout/<int:day_id>', views.AddWorkoutView.as_view(), name='add_workout'),
+    path('record_workout/<int:pk>/validate', views.ValidatePredictionView.as_view(), name='validate_prediction'),
     path('programs/', views.ProgramListView.as_view(), name="program_list"),
     path('programs/<int:pk>', views.ProgramDayListView.as_view(), name="program_day_list"),
     path('programs/day/<int:pk>', views.ProgramDayDetailView.as_view(), name='day_detail'),

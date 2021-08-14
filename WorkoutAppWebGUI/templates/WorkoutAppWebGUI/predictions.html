@@ -1,0 +1,25 @@
+{% extends 'WorkoutAppWebGUI/base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+    {% if form.errors %}
+    {% for field in form %}
+        {% for error in field.errors %}
+            <div class="alert alert-danger">
+                <strong>{{ error|escape }}</strong>
+            </div>
+        {% endfor %}
+    {% endfor %}
+    {% for error in form.non_field_errors %}
+        <div class="alert alert-danger">
+            <strong>{{ error|escape }}</strong>
+        </div>
+    {% endfor %}
+    {% endif %}
+
+    <h3>We want your input</h3>
+    <form method="post">
+        {% csrf_token %}
+        {% crispy form %}
+    </form>
+
+{% endblock %}

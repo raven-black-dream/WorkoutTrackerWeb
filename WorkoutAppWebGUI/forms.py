@@ -1,8 +1,11 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.forms.models import inlineformset_factory
+from django.utils.translation import gettext as _
 from .models import WAUser, UserWeight, UserProgram, Workout, Set, Program, ProgramDay, ExpectedSet, ExerciseType
+from .models import Prediction
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Fieldset, Div, HTML, ButtonHolder, Submit
 from .layout import *
@@ -97,10 +100,70 @@ class WorkoutForm(forms.ModelForm):
         )
 
 
+class PredictionValidationForm(forms.ModelForm):
+    """Form for Validating Prediction"""
+    class Meta:
+        model = Workout
+        fields = ['expected', 'date']
+
+    def __init__(self, *args, **kwargs):
+        super(PredictionValidationForm, self).__init__(*args, **kwargs)
+        self.fields['expected'].disabled = True
+        self.fields['date'].disabled = True
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-md-3 create-label'
+        self.helper.field_class = 'col-md-9'
+        self.helper.layout = Layout(
+            Div(
+                Fieldset('Workout', 'expected', 'date'),
+                Fieldset('Predictions',
+                         Formset('predictions')),
+                HTML('<br>'),
+                ButtonHolder(Submit('submit', 'save'))
+            )
+        )
+
+
+class PredictionForm(forms.ModelForm):
+    user_suggestion = forms.IntegerField(min_value=-1, max_value=1, required=False, label='Suggestion')
+
+    class Meta:
+        model = Prediction
+        fields = ['exercise', 'avg_reps', 'avg_rpe', 'recommendation', 'user_agrees', 'user_suggestion']
+        labels = {'user_agrees': 'Agree?'}
+
+    def __init__(self, *args, **kwargs):
+        super(PredictionForm, self).__init__(*args, **kwargs)
+        self.fields['exercise'].disabled = True
+        self.fields['avg_reps'].disabled = True
+        self.fields['avg_rpe'].disabled = True
+        self.fields['user_agrees'].required = True
+        self.fields['recommendation'].disabled = True
+
+    def clean(self):
+        data = super().clean()
+        agree = data.get('user_agrees')
+        suggestion = data.get('user_suggestion')
+
+        if not agree and suggestion is None:
+            self.add_error('user_suggestion', _('Cannot be empty if you disagree'))
+        return data
+
+
 SetFormSet = inlineformset_factory(
     Workout, Set, fields=('exercise', 'reps', 'weight', 'rpe',), can_delete=False
 )
 
 ExpectedSetFormset = inlineformset_factory(
-        ProgramDay, ExpectedSet, fields=('exercise', 'reps_min', 'reps_max', 'amrap', 'rpe'), extra=30, can_delete=False
+    ProgramDay, ExpectedSet, fields=('exercise', 'reps_min', 'reps_max', 'amrap', 'rpe'), extra=30, can_delete=False
+)
+
+PredictionFormSet = inlineformset_factory(
+    Workout,
+    Prediction,
+    form=PredictionForm,
+    extra=0,
+    can_delete=False
 )

@@ -6,10 +6,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.utils.timezone import datetime
 from .models import Workout, WAUser, Program, UserWeight, UserProgram, Set, ProgramDay, ExpectedSet, UnitType
-from .models import ExerciseType
+from .models import ExerciseType, Prediction
 from .forms import UserWeightForm, UserProgramForm, DaySelectorForm, SetFormSet, ExpectedSetFormset, ProgramDayForm
-from .forms import WorkoutForm, AddUserForm, ExerciseForm
-from .ml import Predictor
+from .forms import WorkoutForm, AddUserForm, ExerciseForm, PredictionValidationForm, PredictionFormSet
+from .ml import Predictor, quick_predict
 from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.models import Select, CustomJS, ColumnDataSource
@@ -126,6 +126,21 @@ def choose_day(request):
                                                                   'program': user_program.program.program_name})
 
 
+def populate_predictions(pk):
+    data = Workout.objects.get(workout_id=pk) \
+        .set_set.values('exercise_id') \
+        .annotate(avg_reps=Avg('reps'), avg_rpe=Avg('rpe'), )
+    suggestion = quick_predict(pk)
+    for row in data:
+        recommendation = suggestion.loc[suggestion['exercise_id'] == row['exercise_id'], 'suggestion'].values[0]
+        pred = Prediction(workout_id=Workout.objects.filter(workout_id=pk).first(),
+                          exercise=ExerciseType.objects.filter(exercise_id=row['exercise_id']).first(),
+                          avg_reps=row['avg_reps'],
+                          avg_rpe=row['avg_rpe'],
+                          recommendation=recommendation)
+        pred.save()
+
+
 class UserView(LoginRequiredMixin, generic.DetailView):
     model = WAUser
     template_name = 'WorkoutAppWebGUI/profile.html'
@@ -202,6 +217,7 @@ class AddWorkoutView(LoginRequiredMixin, generic.CreateView):
     template_name = 'WorkoutAppWebGUI/add_workout.html'
     login_url = 'login/'
     redirect_field_name = ''
+    pk = None
 
     def get_form(self, form_class=None):
         form = super(AddWorkoutView, self).get_form(form_class)
@@ -232,6 +248,7 @@ class AddWorkoutView(LoginRequiredMixin, generic.CreateView):
             instance.user_id = self.request.user.wauser.pk
             instance.expected = context['day']
             instance.save()
+            self.pk = instance.pk
             i = 1
             old_exercise = 0
             for set_instance in sets:
@@ -248,6 +265,47 @@ class AddWorkoutView(LoginRequiredMixin, generic.CreateView):
                     ex_set.save()
                     old_exercise = current_ex
                     i += 1
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        populate_predictions(self.pk)
+        return reverse('validate_prediction', kwargs={'pk': self.pk})
+
+
+class ValidatePredictionView(LoginRequiredMixin, generic.UpdateView):
+    model = Workout
+    form_class = PredictionValidationForm
+    template_name = 'WorkoutAppWebGUI/predictions.html'
+    login_url = 'login/'
+    redirect_field_name = ''
+
+    def get_form(self, form_class=None):
+        form = super(ValidatePredictionView, self).get_form(form_class)
+        return form
+
+    def get_context_data(self, **kwargs):
+        data = super(ValidatePredictionView, self).get_context_data(**kwargs)
+        if self.request.POST:
+            data['predictions'] = PredictionFormSet(self.request.POST, instance=self.object)
+        else:
+            data['predictions'] = PredictionFormSet(instance=self.object)
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        predictions = context['predictions']
+        form = context['form']
+        if form.is_valid():
+            instance = form.save(commit=False)
+            predictions.instance = instance
+            for prediction in predictions:
+                if prediction.is_valid():
+                    pred_instance = prediction.save(commit=False)
+                    if pred_instance.user_agrees and pred_instance.user_suggestion is not None:
+                        pred_instance.user_suggestion = None
+                    pred_instance.save()
+                else:
+                    return super().form_invalid(form)
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -329,7 +387,7 @@ class ProgramDayDetailView(LoginRequiredMixin, generic.DetailView):
         return context
 
 
-class ProgramDayUpdate(LoginRequiredMixin, UserPassesTestMixin,generic.UpdateView):
+class ProgramDayUpdate(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
     model = ProgramDay
     form_class = ProgramDayForm
     template_name = 'WorkoutAppWebGUI/create_day.html'

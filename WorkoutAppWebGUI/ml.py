@@ -1,10 +1,10 @@
 import csv
-import os
 import pandas
 import pickle
 import numpy
-from .models import Set, ExpectedSet, ProgramDay, ExerciseType, Workout
-from sklearn import svm
+import pandas as pd
+
+from .models import Set, ExpectedSet, ExerciseType, Workout
 
 
 class Predictor:
@@ -13,8 +13,6 @@ class Predictor:
         self.previous_data = self.get_previous_data(day, user)
         self.day = self.get_program_day(day)
         self.user = user
-        if not os.path.exists("RFCModel.pkl"):
-            self.train_svc()
         self.model = pickle.load(open("RFCModel.pkl", 'rb'))
 
     def fit_svc(self):
@@ -212,11 +210,27 @@ class Predictor:
     def rounding_for_weights(value, base):
         return base * round(value/base)
 
-    @staticmethod
-    def train_svc():
-        data = pandas.read_csv("training_data.csv")
-        svc = svm.SVC(decision_function_shape='ovo', degree=1, kernel='poly', probability=True)
-        x = data[["scaled_by_min", "scaled_by_max"]]
-        y = data["result"]
-        svc.fit(x, y)
-        pickle.dump(svc, open("SVCModel.pkl", 'wb'))
+
+def quick_predict(pk):
+    model = pickle.load(open("RFCModel.pkl", 'rb'))
+    data = pd.DataFrame.from_records(
+        Set.objects.filter(workout_id=pk).all().values()
+    )
+    data['rpe'] = data['rpe'].astype('int64')
+    day = Workout.objects.filter(workout_id=pk).values('expected_id').first()['expected_id']
+    user = Workout.objects.filter(workout_id=pk).values('user_id').first()['user_id']
+    expected = pd.DataFrame.from_records(
+        ExpectedSet.objects.filter(day_id=day).all().values()
+    )
+
+    expected = expected.groupby('exercise_id').agg({'reps_min': 'mean',
+                                                    'reps_max': 'mean',
+                                                    'set_num': 'max'})
+    data = data.groupby('exercise_id').agg({'reps': 'mean',
+                                            'rpe': 'mean'})
+
+    data = data.merge(expected, left_index=True, right_index=True, how='left')
+    data['user_id'] = user
+    data['suggestion'] = model.predict(data)
+    data.reset_index(inplace=True)
+    return data[['exercise_id', 'suggestion']]
