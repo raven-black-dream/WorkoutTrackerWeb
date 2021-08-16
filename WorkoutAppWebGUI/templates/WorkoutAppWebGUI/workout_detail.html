@@ -20,6 +20,9 @@
             </tr>
         {% endfor %}
         </table>
+    <form action={% url 'validate_prediction' pk=workout.workout_id %}>
+        <button type='submit' class="btn btn-primary">See model predictions</button>
+    </form>
     </div>
 
 {% endblock %}

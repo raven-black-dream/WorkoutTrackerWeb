@@ -31,7 +31,7 @@ class Predictor:
         rep_ranges = self.get_rep_ranges()
         for exercise in exercise_list:
             exercise_data = self.get_exercise_data(exercise)
-            most_recent = exercise_data['workout_id'][0]
+            most_recent = max(exercise_data['workout_id'])
             ex_data = prev_data[(prev_data["workout_id"] == most_recent) & (prev_data["exercise_id"] == exercise)].copy()
             ex_data['rpe'] = ex_data['rpe'].astype('int64')
             ex_data = ex_data.groupby('exercise_id').agg({
@@ -231,6 +231,6 @@ def quick_predict(pk):
 
     data = data.merge(expected, left_index=True, right_index=True, how='left')
     data['user_id'] = user
-    data['suggestion'] = model.predict(data)
+    data['suggestion'] = model.predict(data[['reps_min', 'reps_max', 'reps', 'rpe', 'set_number', 'user_id']])
     data.reset_index(inplace=True)
     return data[['exercise_id', 'suggestion']]
