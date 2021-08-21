@@ -231,6 +231,6 @@ def quick_predict(pk):
 
     data = data.merge(expected, left_index=True, right_index=True, how='left')
     data['user_id'] = user
-    data['suggestion'] = model.predict(data[['reps_min', 'reps_max', 'reps', 'rpe', 'set_number', 'user_id']])
+    data['suggestion'] = model.predict(data[['reps_min', 'reps_max', 'reps', 'rpe', 'set_num', 'user_id']])
     data.reset_index(inplace=True)
     return data[['exercise_id', 'suggestion']]
